@@ -63,4 +63,6 @@ At most, each agent in a container gets its own thread or process.
 * $|C| \in [1, 10]$
 
 ## Evaluation
-In the first version of this benchmark, executions are compared by their total runtime.
+In the first version of this benchmark, executions are compared by their total runtime. 
+
+Notably, julia scenarios are run twice. Once by calling each scenario methods once before timing to remove any compilation time from the measurement and once including compilation times. Other than that, timing is done within each scenario script by the functions of the given language.
