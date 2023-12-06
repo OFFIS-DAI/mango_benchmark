@@ -61,3 +61,6 @@ At most, each agent in a container gets its own thread or process.
 ### Degree of Containerization
 * Given by a number $n_C$ of containers in the system. If $n_C \geq n_A$ then every agent has its own container. In the parameters, this is varied as:
 * $|C| \in [1, 10]$
+
+## Evaluation
+In the first version of this benchmark, executions are compared by their total runtime.
