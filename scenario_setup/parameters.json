@@ -2,10 +2,11 @@
     "simulation_configs": [
         {
             "simulation_name": "test",
-            "number_of_agents": [100],
+            "number_of_agents": 100,
             "number_of_containers": 10,
             "rng_seed": 4711,
-            "small_world_k": 0.5,
+            "small_world_k": 3,
+            "small_world_p": 0.5,
 
             "agent_tasks": {
                 "w_messages_in_seconds": 0.01,
