@@ -9,10 +9,10 @@
             "small_world_p": 0.5,
 
             "agent_tasks": {
-                "w_messages_in_seconds": 0.01,
-                "w_periodic_in_seconds": 0.001,
-                "n_periodic": 5,
-                "d_periodic_in_seconds": 0.5
+                "work_on_message_in_seconds": 0.01,
+                "work_periodic_in_seconds": 0.001,
+                "n_periodic_task": 5,
+                "delay_periodic_in_seconds": 0.5
             },
             
             "messages": {

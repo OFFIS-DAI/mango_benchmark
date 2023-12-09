@@ -3,8 +3,8 @@ using PyCall
 using JSON
 
 THIS_DIR = @__DIR__
-PARAM_FILE = THIS_DIR * "../scenario_setup/parameters.json"
-PY_MAKE_TOPOLOGY = THIS_DIR * "../scenario_setup/make_topology.py"
+PARAM_FILE = THIS_DIR * "/../scenario_setup/parameters.json"
+PY_MAKE_TOPOLOGY = THIS_DIR * "/../scenario_setup/make_topology.py"
 
 export read_parameters, get_topology, agent_container_map
 
@@ -14,14 +14,15 @@ function read_parameters()::Vector{Dict{String,Any}}
 end
 
 function get_topology(config::Dict{String,Any})::Matrix{Int64}
-    n_agents = config["n_agents"]
+    number_of_agents = config["number_of_agents"]
     k = config["small_world_k"]
     p = config["small_world_p"]
     seed = config["rng_seed"]
 
     @pyinclude(PY_MAKE_TOPOLOGY)
-    params = "$n_agents, $k, $p, $seed"
-    adjacency_matrix = py"make_small_world_topology($params)"
+    params = "$number_of_agents, $k, $p, $seed"
+    python_call = "make_small_world_topology($params)"
+    adjacency_matrix = py"$$python_call"
 
     return adjacency_matrix
 end
