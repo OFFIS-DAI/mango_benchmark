@@ -1,0 +1,33 @@
+container:
+    - core.jl line 163: kwargs keys sind symbol nicht string
+
+
+why is default handle message called when in my context SimAgent is defined and handle_message is defined on it?
+
+
+meta type orderedDict
+    -> irgendwo macht das OrderedCollections package daraus ein Littledict und das kennt forward_message nicht...
+
+
+passing strings to send message does weird things with the content
+    -> encode/decode is the likely culprit
+
+
+    orderedcollection version = "0.18.15" maybe broke something?
+
+
+ Error: connection job exited with unexpected error
+│   exception =
+│    MethodError: no method matching forward_message(::Container, ::String, ::LittleDict{String, Any, Vector{String}, Vector{Any}})
+│    Closest candidates are:
+│      forward_message(::Container, ::Any, ::OrderedDict{String, Any}) at ~/work/code/mango/Mango.jl/src/container/core.jl:123
+│    Stacktrace:
+│     [1] process_message(container::Container, msg_data::Vector{UInt8}, sender_addr::InetAddr{Sockets.IPv4})
+│       @ Mango.ContainerCore ~/work/code/mango/Mango.jl/src/container/core.jl:58
+│     [2] #5
+│       @ ~/work/code/mango/Mango.jl/src/container/core.jl:69 [inlined]
+│     [3] handle_connection(data_handler::Mango.ContainerCore.var"#5#7"{Container}, connection::Sockets.TCPSocket)
+│       @ Mango.ProtocolCore ~/work/code/mango/Mango.jl/src/container/tcp.jl:126
+│     [4] (::Mango.ProtocolCore.var"#12#14"{Sockets.TCPSocket, Mango.ContainerCore.var"#5#7"{Container}})()
+│       @ Mango.ProtocolCore ./task.jl:484
+└ @ Mango.ProtocolCore ~/work/code/mango/Mango.jl/src/container/tcp.jl:131

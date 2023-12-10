@@ -2,13 +2,22 @@ module SimulationAgent
 using Mango
 import Mango.AgentCore.handle_message
 using Sockets: InetAddr
+using OrderedCollections
 
 export SimAgent, AgentAddress, run_agent
 
+PING_TYPE = "ping"
+PONG_TYPE = "pong"
+PING_CHAR = 'a'
+PONG_CHAR = 'b'
 
 struct AgentAddress
     addr::InetAddr
     aid::String
+
+    function AgentAddress(msg_addr::InetAddr, msg_aid::String)
+        return new(msg_addr, msg_aid)
+    end
 
     function AgentAddress(msg_addr::String, msg_aid::String)
         host, port_string = split(msg_addr, ":")
@@ -32,35 +41,43 @@ end
 end
 
 function send_ping(agent::SimAgent, target::AgentAddress)
-    content = "a"^agent.message_size_bytes
-    send_message(agent, content, target.aid, target.addr, type = "Ping")
+    content = OrderedDict{String,Any}()
+    content["type"] = PING_TYPE
+    content["data"] = PING_CHAR^agent.message_size_bytes
+    send_message(agent, content, target.aid, target.addr)
+    agent.neighbor_pong_future[target] = Condition()
 end
 
 function send_pong(agent::SimAgent, target::AgentAddress)
-    content = "a"^agent.message_size_bytes
-    send_message(agent, content, target.aid, target.addr, type = "Pong")
+    content = OrderedDict{String,Any}()
+    content["type"] = PONG_TYPE
+    content["data"] = PONG_CHAR^agent.message_size_bytes
+    send_message(agent, content, target.aid, target.addr)
 end
 
 # Override the default handle_message function for ping pong agents
-function handle_message(agent::SimAgent, message::Any, meta::Dict)
+function handle_message(agent::SimAgent, content::Any, meta::OrderedDict{String,Any})
     # All messages should contain the following <meta> fields:
     #
     # - "sender_id" --- aid of the sending agent
     # - "sender_addr" --- address of the sending agents container
     # - "type" --- {"ping" or "pong"}
     #
-    # The <message> field itself contains the payload of predefined size.
+    # The <content> field itself contains the payload of predefined size.
     # We don't do anything with that.
+    println("got a message with: ", content, "  ", meta)
 
     sender = AgentAddress(meta["sender_addr"], meta["sender_id"])
 
     # TODO schedule once off busy work
 
-    if meta["type"] == "Ping"
+    if content[1] == PING_CHAR
         send_pong(agent, sender)
-    elseif meta["type"] == Pong
+    elseif content[1] == PONG_CHAR
         agent.neighbor_pongs_received[sender] += 1
+        println("c1")
         notify(agent.neighbor_pong_future[sender])
+        println("c2")
     end
 end
 
@@ -68,8 +85,12 @@ end
 function run_agent(agent::SimAgent)::Nothing
     @async start_periodic_tasks(agent)
 
-    @sync for neighbor in agent.neighbors
-        @async run_ping_loop_for_neighbor(agent, neighbor)
+    # @sync for neighbor in agent.neighbors
+    #     @async run_ping_loop_for_neighbor(agent, neighbor)
+    # end
+
+    for neighbor in agent.neighbors
+        run_ping_loop_for_neighbor(agent, neighbor)
     end
 end
 
