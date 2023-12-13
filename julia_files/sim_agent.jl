@@ -52,7 +52,7 @@ function send_pong(agent::SimAgent, target::AgentAddress)
 end
 
 # Override the default handle_message function for ping pong agents
-function handle_message(agent::SimAgent, content::Any, meta::OrderedDict{String,Any})
+function handle_message(agent::SimAgent, content::Any, meta::AbstractDict)
     # All messages should contain the following <meta> fields:
     #
     # - "sender_id" --- aid of the sending agent
