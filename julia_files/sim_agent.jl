@@ -41,18 +41,14 @@ end
 end
 
 function send_ping(agent::SimAgent, target::AgentAddress)
-    content = OrderedDict{String,Any}()
-    content["type"] = PING_TYPE
-    content["data"] = PING_CHAR^agent.message_size_bytes
-    send_message(agent, content, target.aid, target.addr)
+    data = PING_CHAR^agent.message_size_bytes
+    send_message(agent, data, target.aid, target.addr, type=PING_TYPE)
     agent.neighbor_pong_future[target] = Condition()
 end
 
 function send_pong(agent::SimAgent, target::AgentAddress)
-    content = OrderedDict{String,Any}()
-    content["type"] = PONG_TYPE
-    content["data"] = PONG_CHAR^agent.message_size_bytes
-    send_message(agent, content, target.aid, target.addr)
+    data = PONG_CHAR^agent.message_size_bytes
+    send_message(agent, data, target.aid, target.addr, type=PONG_TYPE)
 end
 
 # Override the default handle_message function for ping pong agents
@@ -71,13 +67,11 @@ function handle_message(agent::SimAgent, content::Any, meta::OrderedDict{String,
 
     # TODO schedule once off busy work
 
-    if content[1] == PING_CHAR
+    if meta["type"] == PING_TYPE
         send_pong(agent, sender)
-    elseif content[1] == PONG_CHAR
+    elseif meta["type"] == PONG_TYPE
         agent.neighbor_pongs_received[sender] += 1
-        println("c1")
         notify(agent.neighbor_pong_future[sender])
-        println("c2")
     end
 end
 

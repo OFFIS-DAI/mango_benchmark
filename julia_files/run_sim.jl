@@ -47,7 +47,7 @@ function run_simulation(config::Dict{String,Any})::Float64
     # output time
 
     c1 = Container()
-    c1.protocol = TCPProtocol(address = InetAddr(ip"127.0.0.1", 2980))
+    c1.protocol = TCPProtocol(address=InetAddr(ip"127.0.0.1", 2980))
     a1 = SimAgent(
         0.0,
         0.0,
@@ -61,7 +61,7 @@ function run_simulation(config::Dict{String,Any})::Float64
     register(c1, a1)
 
     c2 = Container()
-    c2.protocol = TCPProtocol(address = InetAddr(ip"127.0.0.1", 2981))
+    c2.protocol = TCPProtocol(address=InetAddr(ip"127.0.0.1", 2981))
     a2 = SimAgent(
         0.0,
         0.0,
@@ -75,7 +75,7 @@ function run_simulation(config::Dict{String,Any})::Float64
     register(c2, a2)
 
     c3 = Container()
-    c3.protocol = TCPProtocol(address = InetAddr(ip"127.0.0.1", 2982))
+    c3.protocol = TCPProtocol(address=InetAddr(ip"127.0.0.1", 2982))
     a3 = SimAgent(
         0.0,
         0.0,
@@ -89,7 +89,7 @@ function run_simulation(config::Dict{String,Any})::Float64
     register(c3, a3)
 
     c4 = Container()
-    c4.protocol = TCPProtocol(address = InetAddr(ip"127.0.0.1", 2983))
+    c4.protocol = TCPProtocol(address=InetAddr(ip"127.0.0.1", 2983))
     a4 = SimAgent(
         0.0,
         0.0,
@@ -116,6 +116,8 @@ function run_simulation(config::Dict{String,Any})::Float64
     @sync begin
         @async shutdown(c1)
         @async shutdown(c2)
+        @async shutdown(c3)
+        @async shutdown(c4)
     end
 
     return simulation_time

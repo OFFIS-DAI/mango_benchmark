@@ -1,14 +1,14 @@
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.8.2"
+julia_version = "1.8.5"
 manifest_format = "2.0"
 project_hash = "0af2bde2166c4b6c3f0e6d2df7ea10c022514b4a"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra", "Requires"]
-git-tree-sha1 = "02f731463748db57cc2ebfbd9fbc9ce8280d3433"
+git-tree-sha1 = "cde29ddf7e5726c9fb511f340244ea3481267608"
 uuid = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
-version = "3.7.1"
+version = "3.7.2"
 
 [[deps.ArgCheck]]
 git-tree-sha1 = "a3a402a35a2f7e0b87828ccabbd5ebfbebe356b4"
@@ -57,7 +57,7 @@ version = "4.10.1"
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
-version = "0.5.2+0"
+version = "1.0.1+0"
 
 [[deps.CompositionsBase]]
 git-tree-sha1 = "802bb88cd69dfd1509f6670416bd4434015693ad"
@@ -244,7 +244,9 @@ version = "0.5.11"
 
 [[deps.Mango]]
 deps = ["ConcurrentUtilities", "Dates", "Distributed", "JSON", "LightBSON", "OrderedCollections", "Parameters", "Sockets"]
-git-tree-sha1 = "5c838507eaaf83a8a4264c2ed6addf483df02224"
+git-tree-sha1 = "16513904621ece134079443a3a8428540caeb802"
+repo-rev = "development"
+repo-url = "/home/jens/Mango.jl"
 uuid = "5e49fdec-d473-4d14-b295-7bff2fcf1925"
 version = "0.1.0"
 
@@ -291,9 +293,9 @@ uuid = "efe28fd5-8261-553b-a9e1-b2916fc3738e"
 version = "0.5.5+0"
 
 [[deps.OrderedCollections]]
-git-tree-sha1 = "dfdf5519f235516220579f949664f1bf44e741c5"
+git-tree-sha1 = "2e73fe17cac3c62ad1aebe70d44c963c3cfdc3e3"
 uuid = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
-version = "1.6.3"
+version = "1.6.2"
 
 [[deps.Parameters]]
 deps = ["OrderedCollections", "UnPack"]
