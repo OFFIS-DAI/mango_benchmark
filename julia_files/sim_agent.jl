@@ -70,7 +70,6 @@ function handle_message(agent::SimAgent, content::Any, meta::AbstractDict)
     if meta["type"] == PING_TYPE
         send_pong(agent, sender)
     elseif meta["type"] == PONG_TYPE
-        agent.neighbor_pongs_received[sender] += 1
         notify(agent.neighbor_pong_future[sender])
     end
 end
