@@ -37,13 +37,12 @@ end
     message_size_bytes::Int64
     neighbors::Vector{AgentAddress}
     #neighbor_pongs_received::Dict{AgentAddress,Int64}
-    neighbor_pong_future::Dict{AgentAddress,Condition}
+    neighbor_pong_future::Dict{AgentAddress,Threads.Condition}
 end
 
 function send_ping(agent::SimAgent, target::AgentAddress)
     data = PING_CHAR^agent.message_size_bytes
     send_message(agent, data, target.aid, target.addr, type = PING_TYPE)
-    agent.neighbor_pong_future[target] = Condition()
 end
 
 function send_pong(agent::SimAgent, target::AgentAddress)
@@ -70,7 +69,9 @@ function handle_message(agent::SimAgent, content::Any, meta::AbstractDict)
     if meta["type"] == PING_TYPE
         send_pong(agent, sender)
     elseif meta["type"] == PONG_TYPE
-        notify(agent.neighbor_pong_future[sender])
+        lock(agent.neighbor_pong_future[sender]) do
+            notify(agent.neighbor_pong_future[sender])
+        end
     end
 end
 
@@ -79,7 +80,7 @@ function run_agent(agent::SimAgent)::Nothing
     @async start_periodic_tasks(agent)
 
     @sync for neighbor in agent.neighbors
-        @async run_ping_loop_for_neighbor(agent, neighbor)
+        Threads.@spawn run_ping_loop_for_neighbor(agent, neighbor)
     end
 end
 
@@ -90,7 +91,10 @@ end
 function run_ping_loop_for_neighbor(agent::SimAgent, neighbor::AgentAddress)::Nothing
     for _ = 1:agent.response_count
         send_ping(agent, neighbor)
-        wait(agent.neighbor_pong_future[neighbor])
+        agent.neighbor_pong_future[neighbor] = Threads.Condition()
+        lock(agent.neighbor_pong_future[neighbor]) do
+            wait(agent.neighbor_pong_future[neighbor])
+        end
     end
 end
 
