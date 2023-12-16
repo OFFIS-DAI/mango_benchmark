@@ -42,13 +42,13 @@ end
 
 function send_ping(agent::SimAgent, target::AgentAddress)
     data = PING_CHAR^agent.message_size_bytes
-    send_message(agent, data, target.aid, target.addr, type=PING_TYPE)
+    send_message(agent, data, target.aid, target.addr, type = PING_TYPE)
     agent.neighbor_pong_future[target] = Condition()
 end
 
 function send_pong(agent::SimAgent, target::AgentAddress)
     data = PONG_CHAR^agent.message_size_bytes
-    send_message(agent, data, target.aid, target.addr, type=PONG_TYPE)
+    send_message(agent, data, target.aid, target.addr, type = PONG_TYPE)
 end
 
 # Override the default handle_message function for ping pong agents
@@ -78,12 +78,8 @@ end
 function run_agent(agent::SimAgent)::Nothing
     @async start_periodic_tasks(agent)
 
-    # @sync for neighbor in agent.neighbors
-    #     @async run_ping_loop_for_neighbor(agent, neighbor)
-    # end
-
-    for neighbor in agent.neighbors
-        run_ping_loop_for_neighbor(agent, neighbor)
+    @sync for neighbor in agent.neighbors
+        @async run_ping_loop_for_neighbor(agent, neighbor)
     end
 end
 
