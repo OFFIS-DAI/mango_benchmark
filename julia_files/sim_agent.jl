@@ -38,6 +38,7 @@ end
     neighbors::Vector{AgentAddress}
     #neighbor_pongs_received::Dict{AgentAddress,Int64}
     neighbor_pong_future::Dict{AgentAddress,Threads.Condition}
+    incoming_msg_count::Int64 # for debugging only
 end
 
 function send_ping(agent::SimAgent, target::AgentAddress)
@@ -60,7 +61,8 @@ function handle_message(agent::SimAgent, content::Any, meta::AbstractDict)
     #
     # The <content> field itself contains the payload of predefined size.
     # We don't do anything with that.
-    println("got a message with: ", content, "  ", meta)
+    # println("got a message with: ", content, "  ", meta)
+    agent.incoming_msg_count += 1
 
     sender = AgentAddress(meta["sender_addr"], meta["sender_id"])
 

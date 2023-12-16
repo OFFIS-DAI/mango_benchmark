@@ -58,6 +58,7 @@ function run_simulation(config::Dict{String,Any})::Float64
         10,
         Vector{AgentAddress}(),
         Dict{AgentAddress,Threads.Condition}(),
+        0,
     )
     register(c1, a1)
 
@@ -72,11 +73,16 @@ function run_simulation(config::Dict{String,Any})::Float64
         10,
         Vector{AgentAddress}(),
         Dict{AgentAddress,Threads.Condition}(),
+        0,
     )
     register(c2, a2)
 
-    wait(Threads.@spawn start(c1))
-    wait(Threads.@spawn start(c2))
+    containers = [c1, c2]
+    agents = [a1, a2]
+
+    for c in containers
+        wait(Threads.@spawn start(c))
+    end
 
     a2_address = AgentAddress(c2.protocol.address, a2.aid)
     a1.neighbors = [a2_address]
@@ -84,15 +90,16 @@ function run_simulation(config::Dict{String,Any})::Float64
     a1_address = AgentAddress(c1.protocol.address, a1.aid)
     a2.neighbors = [a1_address]
 
-    agents = [a1, a2]
-
     @sync for a in agents
         @async run_agent(a)
     end
 
-    @sync begin
-        @async shutdown(c1)
-        @async shutdown(c2)
+    for a in agents
+        println(a.incoming_msg_count)
+    end
+
+    @sync for c in containers
+        @async shutdown(c)
     end
 
     return simulation_time
