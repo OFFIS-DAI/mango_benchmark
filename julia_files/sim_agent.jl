@@ -63,10 +63,10 @@ function handle_message(agent::SimAgent, content::Any, meta::AbstractDict)
     # We don't do anything with that.
     # println("got a message with: ", content, "  ", meta)
     agent.incoming_msg_count += 1
-
     sender = AgentAddress(meta["sender_addr"], meta["sender_id"])
 
-    # TODO schedule once off busy work
+    # simulate work caused by the message
+    schedule_one_off_task(agent)
 
     if meta["type"] == PING_TYPE
         send_pong(agent, sender)
@@ -87,7 +87,9 @@ function run_agent(agent::SimAgent)::Nothing
 end
 
 function start_periodic_tasks(agent::SimAgent)::Nothing
-    # TODO implement me
+    for _ = 1:agent.n_periodic_tasks
+        schedule_periodic_task(agent)
+    end
 end
 
 function run_ping_loop_for_neighbor(agent::SimAgent, neighbor::AgentAddress)::Nothing
@@ -110,12 +112,20 @@ function busy_work(t_in_seconds::Float64)::Nothing
     return nothing
 end
 
-function schedule_periodic_task(agent::SimAgent)
-
+function schedule_periodic_task(agent::SimAgent)::Nothing
+    function periodic_task()
+        busy_work(agent.w_periodic_in_seconds)
+    end
+    schedule(periodic_task, agent, PeriodicTaskData(agent.delay_periodic_in_seconds))
+    return nothing
 end
 
-function schedule_one_off_task(agent::SimAgent)
-
+function schedule_one_off_task(agent::SimAgent)::Nothing
+    function one_off_task()
+        busy_work(agent.work_on_message_in_seconds)
+    end
+    schedule(one_off_task, agent, InstantTaskData())
+    return nothing
 end
 
 end
