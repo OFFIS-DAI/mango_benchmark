@@ -43,14 +43,39 @@ end
 end
 
 function send_ping(agent::SimAgent, target::AgentAddress)
-    # TODO change data to be nested dicts
-    data = PING_CHAR^agent.message_size_bytes
-    send_message(agent, data, target.aid, target.addr, type = PING_TYPE)
+    msg_dict = Dict{String,Dict}()
+    data_dict = Dict{String,String}()
+    data_dict["data"] = PING_CHAR^agent.message_size_bytes
+
+    for i = 1:agent.message_nesting_depths
+        if i == 1
+            msg_dict = data_dict
+        else
+            new_layer = Dict{String,Dict}()
+            new_layer["data"] = msg_dict
+            msg_dict = new_layer
+        end
+    end
+
+    send_message(agent, msg_dict, target.aid, target.addr, type = PING_TYPE)
 end
 
 function send_pong(agent::SimAgent, target::AgentAddress)
-    data = PONG_CHAR^agent.message_size_bytes
-    send_message(agent, data, target.aid, target.addr, type = PONG_TYPE)
+    msg_dict = Dict{String,Dict}()
+    data_dict = Dict{String,String}()
+    data_dict["data"] = PONG_CHAR^agent.message_size_bytes
+
+    for i = 1:agent.message_nesting_depths
+        if i == 1
+            msg_dict = data_dict
+        else
+            new_layer = Dict{String,Dict}()
+            new_layer["data"] = msg_dict
+            msg_dict = new_layer
+        end
+    end
+
+    send_message(agent, msg_dict, target.aid, target.addr, type = PONG_TYPE)
 end
 
 # Override the default handle_message function for ping pong agents

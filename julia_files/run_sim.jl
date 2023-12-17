@@ -72,7 +72,7 @@ function run_dummy()
         10,
         Vector{AgentAddress}(),
         Dict{AgentAddress,Threads.Condition}(),
-        2,
+        4,
         0,
     )
     register(c1, a1)
@@ -88,7 +88,7 @@ function run_dummy()
         10,
         Vector{AgentAddress}(),
         Dict{AgentAddress,Threads.Condition}(),
-        2,
+        4,
         0,
     )
     register(c2, a2)
