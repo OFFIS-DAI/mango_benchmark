@@ -32,14 +32,16 @@ def make_small_world_topology(n_agents, k, p, seed):
     random.seed(seed)
 
     for i in range(n_agents):
-        for j in range(n_agents):
+        for j in range(i, n_agents):
             if i == j:
                 # agents are not their own neighbor
                 continue
 
+            # ensure it stays symmetrical for convenience
             if adjacency_matrix[i][j] == 0:
                 if random.random() < p:
                     adjacency_matrix[i][j] = 1
+                    adjacency_matrix[j][i] = 1
 
     # output: n x n adjacency matrix
     return adjacency_matrix

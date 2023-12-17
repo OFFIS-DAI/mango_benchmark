@@ -38,10 +38,12 @@ end
     neighbors::Vector{AgentAddress}
     #neighbor_pongs_received::Dict{AgentAddress,Int64}
     neighbor_pong_future::Dict{AgentAddress,Threads.Condition}
+    message_nesting_depths::Int64
     incoming_msg_count::Int64 # for debugging only
 end
 
 function send_ping(agent::SimAgent, target::AgentAddress)
+    # TODO change data to be nested dicts
     data = PING_CHAR^agent.message_size_bytes
     send_message(agent, data, target.aid, target.addr, type = PING_TYPE)
 end

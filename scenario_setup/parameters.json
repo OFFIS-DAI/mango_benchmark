@@ -6,7 +6,7 @@
             "number_of_containers": 10,
             "rng_seed": 4711,
             "small_world_k": 3,
-            "small_world_p": 0.5,
+            "small_world_p": 0.0,
 
             "agent_tasks": {
                 "work_on_message_in_seconds": 0.01,
@@ -17,12 +17,9 @@
             
             "messages": {
                 "amount": 100,
-                "size_in_bytes": 100
+                "size_in_bytes": 100,
+                "message_nesting_depths": 3
             }
-
-
-
-
         }
     ]   
 }
