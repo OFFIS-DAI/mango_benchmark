@@ -3,24 +3,20 @@
     "simulation_configs": [
         {
             "simulation_name": "test",
-            "number_of_agents": 100,
-            "number_of_containers": 10,
+            "number_of_agents": 7,
+            "number_of_containers": 4,
             "rng_seed": 4711,
             "small_world_k": 3,
-            "small_world_p": 0.0,
+            "small_world_p": 1.0,
 
-            "agent_tasks": {
-                "work_on_message_in_seconds": 0.01,
-                "work_periodic_in_seconds": 0.001,
-                "n_periodic_task": 5,
-                "delay_periodic_in_seconds": 0.5
-            },
-            
-            "messages": {
-                "amount": 100,
-                "size_in_bytes": 100,
-                "message_nesting_depths": 3
-            }
+            "work_on_message_in_seconds": 0.01,
+            "work_periodic_in_seconds": 0.001,
+            "n_periodic_tasks": 5,
+            "delay_periodic_in_seconds": 0.5,
+
+            "message_amount": 10,
+            "message_size_bytes": 100,
+            "message_nesting_depths": 3
         }
     ]   
 }

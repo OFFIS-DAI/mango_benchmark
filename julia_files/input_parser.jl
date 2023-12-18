@@ -8,9 +8,9 @@ PY_MAKE_TOPOLOGY = THIS_DIR * "/../scenario_setup/make_topology.py"
 
 export read_parameters, get_topology, agent_container_map
 
-function read_parameters()::Vector{Dict{String,Any}}
+function read_parameters()::Tuple{Int64,Vector{Dict{String,Any}}}
     configs = JSON.parsefile(PARAM_FILE)
-    return configs["simulation_configs"]
+    return (configs["n_runs"], configs["simulation_configs"])
 end
 
 function get_topology(config::Dict{String,Any})::Matrix{Int64}

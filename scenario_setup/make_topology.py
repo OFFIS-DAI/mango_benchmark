@@ -27,6 +27,7 @@ def make_small_world_topology(n_agents, k, p, seed):
 
             if abs((i - j) % n_agents) <= k or abs(i - j) <= k:
                 adjacency_matrix[i][j] = 1
+                adjacency_matrix[j][i] = 1
 
     # add more edges with a random chance
     random.seed(seed)
@@ -45,7 +46,3 @@ def make_small_world_topology(n_agents, k, p, seed):
 
     # output: n x n adjacency matrix
     return adjacency_matrix
-
-
-if __name__ == "__main__":
-    print(make_small_world_topology(10, 2, 0.5, 123))

@@ -30,15 +30,16 @@ end
 
 @agent struct SimAgent
     work_on_message_in_seconds::Float64
-    w_periodic_in_seconds::Float64
+    work_periodic_in_seconds::Float64
     n_periodic_tasks::Int64
     delay_periodic_in_seconds::Float64
-    response_count::Int64
+    message_amount::Int64
     message_size_bytes::Int64
-    neighbors::Vector{AgentAddress}
-    #neighbor_pongs_received::Dict{AgentAddress,Int64}
-    neighbor_pong_future::Dict{AgentAddress,Threads.Condition}
     message_nesting_depths::Int64
+
+    # non-config fields
+    neighbors::Vector{AgentAddress}
+    neighbor_pong_future::Dict{AgentAddress,Threads.Condition}
     incoming_msg_count::Int64 # for debugging only
 end
 
@@ -120,7 +121,7 @@ function start_periodic_tasks(agent::SimAgent)::Nothing
 end
 
 function run_ping_loop_for_neighbor(agent::SimAgent, neighbor::AgentAddress)::Nothing
-    for _ = 1:agent.response_count
+    for _ = 1:agent.message_amount
         send_ping(agent, neighbor)
         agent.neighbor_pong_future[neighbor] = Threads.Condition()
         lock(agent.neighbor_pong_future[neighbor]) do
@@ -141,7 +142,7 @@ end
 
 function schedule_periodic_task(agent::SimAgent)::Nothing
     function periodic_task()
-        busy_work(agent.w_periodic_in_seconds)
+        busy_work(agent.work_periodic_in_seconds)
     end
     schedule(periodic_task, agent, PeriodicTaskData(agent.delay_periodic_in_seconds))
     return nothing
