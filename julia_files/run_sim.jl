@@ -32,31 +32,35 @@ function make_agents_and_containers(
 
     n_containers = length(agent_lists)
 
-
     # TODO implement me
 
-    c1 = Container()
-    c1.protocol = TCPProtocol(address = InetAddr(ip"127.0.0.1", 2980))
-    a1 = SimAgent(
-        0.0,
-        0.0,
-        10,
-        0.0,
-        10,
-        10,
-        Vector{AgentAddress}(),
-        Dict{AgentAddress,Threads.Condition}(),
-        2,
-        0,
-    )
-    register(c1, a1)
 
     return (agents, containers)
 end
 
 function container_to_agents(config::Dict{String,Any})::Vector{Vector{Int64}}
-    # TODO implement me
-    return [[1]]
+    # returns the agents IDs associated with each container as a vector of int vectors
+    # each int value is an agent ID, the position in the top level vector corresponds to
+    # the container number.
+    n_agents = config["number_of_agents"]
+    n_containers = config["number_of_containers"]
+    agents_per_container = ceil(Int64, n_agents / n_containers)
+    output = Vector{Vector{Int64}}()
+
+    for _ in 1:n_containers
+        push!(output, Vector{Int64}())
+    end
+
+    for i = 1:n_agents
+        # 1:agents_per_container map to 1
+        # n_agents+1:2*agents_per_container map to 2
+        # ...
+        container_id = ceil(Int64, i/agents_per_container)
+        push!(output[container_id], i)
+    end
+
+
+    return output
 end
 
 
@@ -192,12 +196,23 @@ function run_simulation(config::Dict{String,Any})::Float64
     return end_time - start_time
 end
 
+function save_sim_results(times::Vector{Float64}, scenario_name::String)::Nothing
+    # TODO implement me
+    return nothing
+end
+
 
 function main()
-    configs = read_parameters()
+    n_runs, configs = read_parameters()
 
     for config in configs
-        run_simulation(config)
+        result_times = zeros(Float64, n_runs)
+
+        for i = 1:n_runs
+            result_times[i] = run_simulation(config)
+        end
+
+        save_sim_results(result_times, configs["simulation_name"])
     end
 end
 
