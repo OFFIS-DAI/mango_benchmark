@@ -176,10 +176,6 @@ function run_simulation(config::Dict{String,Any})::Float64
     # shut down all containers
     # output time
 
-
-    # get compilation times out of the measurement
-    @time run_dummy()
-
     adjacency_matrix = get_topology(config)
     agent_lists = container_to_agents(config)
     agents, containers = make_agents_and_containers(adjacency_matrix, agent_lists, config)
@@ -223,8 +219,10 @@ end
 
 function main()
     n_runs, configs = read_parameters()
-
     results = Dict{String,Vector{Float64}}()
+
+    # get compilation times out of the measurement
+    @time run_dummy()
 
     for config in configs
         result_times = zeros(Float64, n_runs)
