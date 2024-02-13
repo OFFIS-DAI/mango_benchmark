@@ -224,14 +224,19 @@ function main()
     # get compilation times out of the measurement
     @time run_dummy()
 
-    for config in configs
-        result_times = zeros(Float64, n_runs)
+    println("post dummy, actual runs: ")
+    println("-------------------------")
 
-        for i = 1:n_runs
-            result_times[i] = run_simulation(config)
+    begin
+        for config in configs
+            result_times = zeros(Float64, n_runs)
+
+            for i = 1:n_runs
+                @time result_times[i] = run_simulation(config)
+            end
+
+            results[config["simulation_name"]] = result_times
         end
-
-        results[config["simulation_name"]] = result_times
     end
 
     save_sim_results(results)

@@ -31,3 +31,13 @@ passing strings to send message does weird things with the content
 │     [4] (::Mango.ProtocolCore.var"#12#14"{Sockets.TCPSocket, Mango.ContainerCore.var"#5#7"{Container}})()
 │       @ Mango.ProtocolCore ./task.jl:484
 └ @ Mango.ProtocolCore ~/work/code/mango/Mango.jl/src/container/tcp.jl:131
+
+
+
+- cannot switch to function running in another thread
+    -> because of where threading is called, tasks are not known when returning -> multithreading needs to work differently
+
+
+
+Something eats a lot of memory on the sim run AND keeps using CPU even after the process should be terminated... what is going on?
+    - seems to be an artifact of profiling and whatever vscode is doing, doesnt happen on normal call on the function
