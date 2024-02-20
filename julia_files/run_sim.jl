@@ -4,6 +4,7 @@ using Sockets: InetAddr, @ip_str
 using CSV
 using Dates
 using DataFrames
+using Profile
 
 # using FromFile
 # @from "input_parser.jl" using InputParser
@@ -232,7 +233,11 @@ function main()
             result_times = zeros(Float64, n_runs)
 
             for i = 1:n_runs
-                @time result_times[i] = run_simulation(config)
+                result_times[i] = run_simulation(config)
+                #@profile result_times[i] = run_simulation(config)
+                #Profile.print()
+                #Profile.clear()
+                #println("----------------------------------------")
             end
 
             results[config["simulation_name"]] = result_times

@@ -6,7 +6,7 @@ THIS_DIR = @__DIR__
 PARAM_FILE = THIS_DIR * "/../scenario_setup/parameters.json"
 PY_MAKE_TOPOLOGY = THIS_DIR * "/../scenario_setup/make_topology.py"
 
-export read_parameters, get_topology, agent_container_map
+export read_parameters, get_topology
 
 function read_parameters()::Tuple{Int64,Vector{Dict{String,Any}}}
     configs = JSON.parsefile(PARAM_FILE)
@@ -25,10 +25,6 @@ function get_topology(config::Dict{String,Any})::Matrix{Int64}
     adjacency_matrix = py"$$python_call"
 
     return adjacency_matrix
-end
-
-function container_to_agents(config::Dict{String,Any})::Vector{Vector{Int64}}
-    # TODO implement me
 end
 
 end

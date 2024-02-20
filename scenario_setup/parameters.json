@@ -1,5 +1,5 @@
  {
-    "n_runs": 20,
+    "n_runs": 2,
     "simulation_configs": [
         {
             "simulation_name": "test",

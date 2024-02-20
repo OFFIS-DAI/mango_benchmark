@@ -41,3 +41,8 @@ passing strings to send message does weird things with the content
 
 Something eats a lot of memory on the sim run AND keeps using CPU even after the process should be terminated... what is going on?
     - seems to be an artifact of profiling and whatever vscode is doing, doesnt happen on normal call on the function
+
+
+
+- looks like periodic tasks don't go away between sim runs
+    -> this also explains why cpu load goes to hell even on single run from REPL!
