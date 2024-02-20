@@ -117,7 +117,7 @@ class SimAgent(Agent):
         sender = AgentAddress(sender_addr[0], sender_addr[1], sender_id)
 
         # work
-        # self.schedule_instant_task(self.message_work())
+        self.schedule_instant_task(self.message_work())
         if isinstance(content, PingMessage):
             self.send_pong(sender)
         elif isinstance(content, PongMessage):
@@ -128,9 +128,9 @@ class SimAgent(Agent):
 
     def start_periodic_tasks(self):
         for _ in range(self.n_periodic_tasks):
-            # self.schedule_periodic_task(
-            #     self.periodic_work(), self.delay_periodic_in_seconds
-            # )
+            self.schedule_periodic_task(
+                self.periodic_work, self.delay_periodic_in_seconds
+            )
             pass
 
     async def run_agent(self):
