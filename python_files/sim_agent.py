@@ -91,6 +91,8 @@ class SimAgent(Agent):
         message_amount,
         message_size_bytes,
         message_nesting_depths,
+        periodic_processes,
+        instant_processes,
     ):
         super().__init__(container)
         self.work_on_message_in_seconds = work_on_message_in_seconds
@@ -103,6 +105,8 @@ class SimAgent(Agent):
         self.neighbors = []  # list of agent adresses
         self.neighbor_pong_future = {}
         self.incoming_message_count = 0
+        self.periodic_processes = periodic_processes
+        self.instant_processes = instant_processes
 
     async def periodic_work(self):
         await busy_work(self.w_periodic_in_seconds)
@@ -117,7 +121,11 @@ class SimAgent(Agent):
         sender = AgentAddress(sender_addr[0], sender_addr[1], sender_id)
 
         # work
-        self.schedule_instant_task(self.message_work())
+        if self.instant_processes:
+            self.schedule_instant_process_task(self.message_work())
+        else:
+            self.schedule_instant_task(self.message_work())
+
         if isinstance(content, PingMessage):
             self.send_pong(sender)
         elif isinstance(content, PongMessage):
@@ -128,10 +136,15 @@ class SimAgent(Agent):
 
     def start_periodic_tasks(self):
         for _ in range(self.n_periodic_tasks):
-            self.schedule_periodic_task(
-                self.periodic_work, self.delay_periodic_in_seconds
-            )
-            pass
+
+            if self.periodic_processes:
+                self.schedule_periodic_process_task(
+                    self.periodic_work, self.delay_periodic_in_seconds
+                )
+            else:
+                self.schedule_periodic_task(
+                    self.periodic_work, self.delay_periodic_in_seconds
+                )
 
     async def run_agent(self):
         self.start_periodic_tasks()
