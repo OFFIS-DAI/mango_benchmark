@@ -107,6 +107,12 @@ end
 
 # central entry point to start doing the agents work post initialization
 function run_agent(agent::SimAgent)::Nothing
+    # initialize the dict so threads writing to the dict later can not mess with us
+    # better would be a properly threadsafe construct?
+    for neighbor in agent.neighbors
+        agent.neighbor_pong_future[neighbor] = Threads.Condition()
+    end
+
     @async start_periodic_tasks(agent)
 
     @sync for neighbor in agent.neighbors

@@ -205,13 +205,11 @@ function save_sim_results(results::Dict{String,Vector{Float64}})::Nothing
         mkdir(RESULT_DIR)
     end
 
-    results["n_threads"] = [Threads.nthreads()]
-
     # make csv with 
     # column header = simulation_name
     # column values = result times
     timestamp = string(round(now(), Minute))
-    filename = timestamp * ".csv"
+    filename = string(Threads.nthreads()) * "_" * timestamp * ".csv"
     output_file = RESULT_DIR * "/" * filename
     df = DataFrame(results)
     CSV.write(output_file, df)
