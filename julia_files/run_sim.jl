@@ -209,7 +209,7 @@ function save_sim_results(results::Dict{String,Vector{Float64}})::Nothing
     # column header = simulation_name
     # column values = result times
     timestamp = string(round(now(), Minute))
-    filename = string(Threads.nthreads()) * "_" * timestamp * ".csv"
+    filename = timestamp * "_" * string(Threads.nthreads()) * ".csv"
     output_file = RESULT_DIR * "/" * filename
     df = DataFrame(results)
     CSV.write(output_file, df)
