@@ -91,10 +91,11 @@ class SimAgent(Agent):
         message_amount,
         message_size_bytes,
         message_nesting_depths,
-        periodic_processes,
-        instant_processes,
+        suggested_aid,
+        periodic_processes=False,
+        instant_processes=False,
     ):
-        super().__init__(container)
+        super().__init__(container, suggested_aid=suggested_aid)
         self.work_on_message_in_seconds = work_on_message_in_seconds
         self.w_periodic_in_seconds = w_periodic_in_seconds
         self.n_periodic_tasks = n_periodic_tasks

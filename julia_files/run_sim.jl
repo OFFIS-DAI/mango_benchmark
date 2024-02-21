@@ -205,6 +205,8 @@ function save_sim_results(results::Dict{String,Vector{Float64}})::Nothing
         mkdir(RESULT_DIR)
     end
 
+    results["n_threads"] = [Threads.nthreads()]
+
     # make csv with 
     # column header = simulation_name
     # column values = result times

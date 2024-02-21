@@ -1,31 +1,164 @@
 import asyncio
+import math
+import time
+import os
+import datetime
+import csv
+import pandas as pd
+
 from sim_agent import SimAgent, PingMessage, PongMessage, AgentAddress
 from mango import create_container
 from mango.messages.codecs import JSON
 
+from input_parser import read_parameters, get_topology
 
-async def main():
+CONTAINER_PORT_BASE = 5555
+HOST = "localhost"
+
+THIS_DIR = os.path.dirname(os.path.realpath(__file__))
+RESULT_DIR = os.path.join(THIS_DIR, "../results")
+
+
+async def make_agents_and_containers(
+    adjacenccy_matrix, agent_lists, config, periodic_processes, instant_processes
+):
+    containers = []
+    agents = []
+    n_containers = len(agent_lists)
+
     codec = JSON()
     codec.add_serializer(*PingMessage.__serializer__())
     codec.add_serializer(*PongMessage.__serializer__())
 
-    # TODO dont forget to add message classes to codecs
-    c = await create_container(addr=("localhost", 5555), codec=codec)
-    a1 = SimAgent(c, 1, 1, 1, 1, 2, 10, 5)
-    a2 = SimAgent(c, 1, 1, 1, 1, 2, 10, 5)
+    for i in range(n_containers):
+        c = await create_container(addr=(HOST, CONTAINER_PORT_BASE + i), codec=codec)
+        containers.append(c)
 
-    a1_addr = AgentAddress("localhost", 5555, "agent0")
-    a2_addr = AgentAddress("localhost", 5555, "agent1")
+    for container_id, agent_list in enumerate(agent_lists):
+        for aid in agent_list:
+            agent = SimAgent(
+                c,
+                config["work_on_message_in_seconds"],
+                config["work_periodic_in_seconds"],
+                config["n_periodic_tasks"],
+                config["delay_periodic_in_seconds"],
+                config["message_amount"],
+                config["message_size_bytes"],
+                config["message_nesting_depths"],
+                f"{aid}",
+                periodic_processes,
+                instant_processes,
+            )
 
-    a1.set_neighbors([a2_addr])
-    a2.set_neighbors([a1_addr])
+            agents.append(agent)
 
-    await asyncio.gather(*[a1.run_agent(), a2.run_agent()])
+    # set neighborhoods
+    for aid, agent in enumerate(agents):
+        neighbors = []
+        n_ids = adjacenccy_matrix[aid]
+        for n_id, value in enumerate(n_ids):
+            if value == 1:
+                neighbors.append(agents[n_id])
 
-    print(a1.incoming_message_count)
-    print(a2.incoming_message_count)
+        neighbor_addresses = [
+            AgentAddress(n.addr[0], n.addr[1], n.aid) for n in neighbors
+        ]
 
-    await c.shutdown()
+        agent.set_neighbors(neighbor_addresses)
+
+    return (agents, containers)
+
+
+def container_to_agents(config):
+    n_agents = config["number_of_agents"]
+    n_containers = config["number_of_containers"]
+    agents_per_container = math.ceil(n_agents / n_containers)
+    output = []
+
+    for _ in range(n_containers):
+        output.append([])
+
+    for i in range(n_agents):
+        # 0:agents_per_container-1 map to container 0
+        # agents_per_container:2*agents_per_container-1 map to container 1
+        # ...
+        container_id = i // agents_per_container
+        output[container_id].append(i)
+
+    return output
+
+
+async def run_simulation(config, periodic_processes, instant_processes):
+    adjacency_matrix = get_topology(config)
+    agent_lists = container_to_agents(config)
+    agents, containers = await make_agents_and_containers(
+        adjacency_matrix, agent_lists, config, periodic_processes, instant_processes
+    )
+
+    start_time = time.time()
+
+    await asyncio.gather(*[a.run_agent() for a in agents])
+    await asyncio.gather(*[c.shutdown() for c in containers])
+
+    time_elapsed = time.time() - start_time
+
+    return time_elapsed
+
+
+def save_sim_results(results, file_prefix):
+    if not os.path.isdir(RESULT_DIR):
+        os.mkdir(RESULT_DIR)
+
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M")
+    filename = file_prefix + timestamp + ".csv"
+    output_file = os.path.join(RESULT_DIR, filename)
+
+    df = pd.DataFrame(results)
+    df.to_csv(output_file)
+
+
+async def main():
+    # codec = JSON()
+    # codec.add_serializer(*PingMessage.__serializer__())
+    # codec.add_serializer(*PongMessage.__serializer__())
+
+    # # TODO dont forget to add message classes to codecs
+    # c = await create_container(addr=("localhost", 5555), codec=codec)
+    # a1 = SimAgent(c, 1, 1, 1, 1, 2, 10, 5)
+    # a2 = SimAgent(c, 1, 1, 1, 1, 2, 10, 5)
+
+    # a1_addr = AgentAddress("localhost", 5555, "agent0")
+    # a2_addr = AgentAddress("localhost", 5555, "agent1")
+
+    # a1.set_neighbors([a2_addr])
+    # a2.set_neighbors([a1_addr])
+
+    # await asyncio.gather(*[a1.run_agent(), a2.run_agent()])
+
+    # print(a1.incoming_message_count)
+    # print(a2.incoming_message_count)
+
+    # await c.shutdown()
+    n_runs, configs = read_parameters()
+    results = {}
+
+    # Vanilla python mango
+    periodic_processes = instant_processes = False
+
+    for config in configs:
+        result_times = [0] * n_runs
+
+        for i in range(n_runs):
+            result_times[i] = await run_simulation(
+                config, periodic_processes, instant_processes
+            )
+
+        results[config["simulation_name"]] = result_times
+
+    save_sim_results(results, "python_single_process_")
+    # process periodics
+
+    # process both
 
 
 if __name__ == "__main__":
