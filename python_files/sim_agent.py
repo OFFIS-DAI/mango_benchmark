@@ -53,7 +53,13 @@ def make_pong_message(nesting_depths, msg_bytes):
     return PongMessage(msg_dict)
 
 
-async def busy_work(time_in_s):
+async def busy_work_coro(time_in_s):
+    start = time.time()
+    while time.time() - start < time_in_s:
+        pass
+
+
+def busy_work(time_in_s):
     start = time.time()
     while time.time() - start < time_in_s:
         pass
@@ -109,12 +115,6 @@ class SimAgent(Agent):
         self.periodic_processes = periodic_processes
         self.instant_processes = instant_processes
 
-    async def periodic_work(self):
-        await busy_work(self.w_periodic_in_seconds)
-
-    async def message_work(self):
-        await busy_work(self.work_on_message_in_seconds)
-
     def handle_message(self, content, meta):
         self.incoming_message_count += 1
         sender_id = meta.get("sender_id", None)
@@ -123,9 +123,11 @@ class SimAgent(Agent):
 
         # work
         if self.instant_processes:
-            self.schedule_instant_process_task(self.message_work())
+            self.schedule_instant_process_task(
+                busy_work(self.work_on_message_in_seconds)
+            )
         else:
-            self.schedule_instant_task(self.message_work())
+            self.schedule_instant_task(busy_work_coro(self.work_on_message_in_seconds))
 
         if isinstance(content, PingMessage):
             self.send_pong(sender)
@@ -136,19 +138,21 @@ class SimAgent(Agent):
         self.neighbors = neighbors
 
     def start_periodic_tasks(self):
-        for _ in range(self.n_periodic_tasks):
+        work = self.w_periodic_in_seconds
+        delay = self.delay_periodic_in_seconds
 
+        l_func = lambda: busy_work(work)
+        l_coro = lambda: busy_work_coro(work)
+
+        for _ in range(self.n_periodic_tasks):
             if self.periodic_processes:
-                self.schedule_periodic_process_task(
-                    self.periodic_work, self.delay_periodic_in_seconds
-                )
+                self.schedule_periodic_process_task(l_func, delay)
             else:
-                self.schedule_periodic_task(
-                    self.periodic_work, self.delay_periodic_in_seconds
-                )
+                self.schedule_periodic_task(l_coro, delay)
 
     async def run_agent(self):
         self.start_periodic_tasks()
+
         await asyncio.gather(
             *[self.run_ping_loop_for_neighbor(n) for n in self.neighbors]
         )

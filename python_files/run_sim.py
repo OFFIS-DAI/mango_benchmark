@@ -118,26 +118,6 @@ def save_sim_results(results, file_prefix):
 
 
 async def main():
-    # codec = JSON()
-    # codec.add_serializer(*PingMessage.__serializer__())
-    # codec.add_serializer(*PongMessage.__serializer__())
-
-    # # TODO dont forget to add message classes to codecs
-    # c = await create_container(addr=("localhost", 5555), codec=codec)
-    # a1 = SimAgent(c, 1, 1, 1, 1, 2, 10, 5)
-    # a2 = SimAgent(c, 1, 1, 1, 1, 2, 10, 5)
-
-    # a1_addr = AgentAddress("localhost", 5555, "agent0")
-    # a2_addr = AgentAddress("localhost", 5555, "agent1")
-
-    # a1.set_neighbors([a2_addr])
-    # a2.set_neighbors([a1_addr])
-
-    # await asyncio.gather(*[a1.run_agent(), a2.run_agent()])
-
-    # print(a1.incoming_message_count)
-    # print(a2.incoming_message_count)
-
     # await c.shutdown()
     n_runs, configs = read_parameters()
     results = {}
@@ -156,9 +136,37 @@ async def main():
         results[config["simulation_name"]] = result_times
 
     save_sim_results(results, "python_single_process_")
+
     # process periodics
+    # periodic_processes = True
+
+    # for config in configs:
+    #     result_times = [0] * n_runs
+
+    #     for i in range(n_runs):
+    #         result_times[i] = await run_simulation(
+    #             config, periodic_processes, instant_processes
+    #         )
+
+    #     results[config["simulation_name"]] = result_times
+
+    # save_sim_results(results, "python_periodic_processes_")
 
     # process both
+
+    # instant_processes = True
+
+    # for config in configs:
+    #     result_times = [0] * n_runs
+
+    #     for i in range(n_runs):
+    #         result_times[i] = await run_simulation(
+    #             config, periodic_processes, instant_processes
+    #         )
+
+    #     results[config["simulation_name"]] = result_times
+
+    # save_sim_results(results, "python_all_processes_")
 
 
 if __name__ == "__main__":
