@@ -37,7 +37,7 @@ async def make_agents_and_containers(
     for container_id, agent_list in enumerate(agent_lists):
         for aid in agent_list:
             agent = SimAgent(
-                c,
+                containers[container_id],
                 config["work_on_message_in_seconds"],
                 config["work_periodic_in_seconds"],
                 config["n_periodic_tasks"],
@@ -102,6 +102,8 @@ async def run_simulation(config, periodic_processes, instant_processes):
 
     time_elapsed = time.time() - start_time
 
+    print(time_elapsed)
+
     return time_elapsed
 
 
@@ -138,35 +140,34 @@ async def main():
     save_sim_results(results, "python_single_process_")
 
     # process periodics
-    # periodic_processes = True
+    periodic_processes = True
+    instant_processes = False
 
-    # for config in configs:
-    #     result_times = [0] * n_runs
+    for config in configs:
+        result_times = [0] * n_runs
 
-    #     for i in range(n_runs):
-    #         result_times[i] = await run_simulation(
-    #             config, periodic_processes, instant_processes
-    #         )
+        for i in range(n_runs):
+            result_times[i] = await run_simulation(
+                config, periodic_processes, instant_processes
+            )
 
-    #     results[config["simulation_name"]] = result_times
+        results[config["simulation_name"]] = result_times
 
-    # save_sim_results(results, "python_periodic_processes_")
+    save_sim_results(results, "python_periodic_processes_")
 
     # process both
+    periodic_processes = instant_processes = True
 
-    # instant_processes = True
+    for config in configs:
+        result_times = [0] * n_runs
+        for i in range(n_runs):
+            result_times[i] = await run_simulation(
+                config, periodic_processes, instant_processes
+            )
 
-    # for config in configs:
-    #     result_times = [0] * n_runs
+        results[config["simulation_name"]] = result_times
 
-    #     for i in range(n_runs):
-    #         result_times[i] = await run_simulation(
-    #             config, periodic_processes, instant_processes
-    #         )
-
-    #     results[config["simulation_name"]] = result_times
-
-    # save_sim_results(results, "python_all_processes_")
+    save_sim_results(results, "python_all_processes_")
 
 
 if __name__ == "__main__":

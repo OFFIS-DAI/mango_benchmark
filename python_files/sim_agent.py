@@ -59,10 +59,49 @@ async def busy_work_coro(time_in_s):
         pass
 
 
-def busy_work(time_in_s):
-    start = time.time()
-    while time.time() - start < time_in_s:
-        pass
+from mango.util.clock import AsyncioClock, Clock
+from mango.util.scheduling import (
+    TimestampScheduledProcessTask,
+    PeriodicScheduledTask,
+    ScheduledProcessTask,
+)
+
+
+class InstantScheduledProcessTaskWithParam(TimestampScheduledProcessTask):
+    """One-shot task, which will get executed instantly."""
+
+    def __init__(self, coroutine_creator, param, clock: Clock = None, on_stop=None):
+        if clock is None:
+            clock = AsyncioClock()
+        super().__init__(
+            coroutine_creator,
+            timestamp=clock.time,
+            clock=clock,
+            on_stop=on_stop,
+        )
+        self._param = param
+
+    async def run(self):
+        await self._wait(self._timestamp)
+        return await self._coro(self._param)
+
+
+class PeriodicScheduledProcessTaskWithParam(
+    PeriodicScheduledTask, ScheduledProcessTask
+):
+    def __init__(self, coroutine_func, param, delay, clock: Clock = None, on_stop=None):
+        super().__init__(
+            coroutine_func, delay, clock, on_stop=on_stop, observable=False
+        )
+        self._param = param
+
+    async def run(self):
+        while not self._stopped:
+            await self._coroutine_func(self._param)
+            sleep_future: asyncio.Future = self.clock.sleep(self._delay)
+            self.notify_sleeping()
+            await sleep_future
+            self.notify_running()
 
 
 @dataclass
@@ -115,6 +154,29 @@ class SimAgent(Agent):
         self.periodic_processes = periodic_processes
         self.instant_processes = instant_processes
 
+    def schedule_instant_process_task(
+        self, coroutine_creator, param=None, on_stop=None, src=None
+    ):
+        return self._scheduler.schedule_process_task(
+            InstantScheduledProcessTaskWithParam(
+                coroutine_creator=coroutine_creator, param=param, on_stop=on_stop
+            ),
+            src=src,
+        )
+
+    def schedule_periodic_process_task(
+        self, coroutine_creator, delay, param=None, on_stop=None, src=None
+    ):
+        return self._scheduler.schedule_process_task(
+            PeriodicScheduledProcessTaskWithParam(
+                coroutine_func=coroutine_creator,
+                param=param,
+                delay=delay,
+                on_stop=on_stop,
+            ),
+            src=src,
+        )
+
     def handle_message(self, content, meta):
         self.incoming_message_count += 1
         sender_id = meta.get("sender_id", None)
@@ -124,7 +186,7 @@ class SimAgent(Agent):
         # work
         if self.instant_processes:
             self.schedule_instant_process_task(
-                busy_work(self.work_on_message_in_seconds)
+                busy_work_coro, param=self.work_on_message_in_seconds
             )
         else:
             self.schedule_instant_task(busy_work_coro(self.work_on_message_in_seconds))
@@ -141,12 +203,13 @@ class SimAgent(Agent):
         work = self.w_periodic_in_seconds
         delay = self.delay_periodic_in_seconds
 
-        l_func = lambda: busy_work(work)
         l_coro = lambda: busy_work_coro(work)
 
         for _ in range(self.n_periodic_tasks):
             if self.periodic_processes:
-                self.schedule_periodic_process_task(l_func, delay)
+                self.schedule_periodic_process_task(
+                    busy_work_coro, delay, param=self.w_periodic_in_seconds
+                )
             else:
                 self.schedule_periodic_task(l_coro, delay)
 
