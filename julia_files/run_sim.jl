@@ -41,7 +41,7 @@ function make_agents_and_containers(
 
     for i = 1:n_containers
         c = Container()
-        c.protocol = TCPProtocol(address = InetAddr(HOST, CONTAINER_PORT_BASE + i))
+        c.protocol = TCPProtocol(address=InetAddr(HOST, CONTAINER_PORT_BASE + i))
         push!(containers, c)
     end
 
@@ -114,7 +114,7 @@ end
 
 function run_dummy()
     c1 = Container()
-    c1.protocol = TCPProtocol(address = InetAddr(HOST, DUMMY_PORT))
+    c1.protocol = TCPProtocol(address=InetAddr(HOST, DUMMY_PORT))
     a1 = SimAgent(
         0.0,
         0.0,
@@ -130,7 +130,7 @@ function run_dummy()
     register(c1, a1)
 
     c2 = Container()
-    c2.protocol = TCPProtocol(address = InetAddr(HOST, DUMMY_PORT + 1))
+    c2.protocol = TCPProtocol(address=InetAddr(HOST, DUMMY_PORT + 1))
     a2 = SimAgent(
         0.0,
         0.0,
@@ -183,16 +183,16 @@ function run_simulation(config::Dict{String,Any})::Float64
 
     start_time = time()
 
-    for c in containers
-        wait(Threads.@spawn start(c))
+    @sync for c in containers
+        Threads.@spawn start(c)
     end
 
     @sync for a in agents
-        @async run_agent(a)
+        Threads.@spawn run_agent(a)
     end
 
     @sync for c in containers
-        @async shutdown(c)
+        Threads.@spawn shutdown(c)
     end
 
     end_time = time()
@@ -234,6 +234,7 @@ function main()
 
             for i = 1:n_runs
                 result_times[i] = run_simulation(config)
+                println(result_times[i])
                 #@profile result_times[i] = run_simulation(config)
                 #Profile.print()
                 #Profile.clear()

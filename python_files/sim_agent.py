@@ -139,6 +139,7 @@ class SimAgent(Agent):
         suggested_aid,
         periodic_processes=False,
         instant_processes=False,
+        mp_event=None,
     ):
         super().__init__(container, suggested_aid=suggested_aid)
         self.work_on_message_in_seconds = work_on_message_in_seconds
@@ -153,6 +154,7 @@ class SimAgent(Agent):
         self.incoming_message_count = 0
         self.periodic_processes = periodic_processes
         self.instant_processes = instant_processes
+        self.mp_event = mp_event
 
     def schedule_instant_process_task(
         self, coroutine_creator, param=None, on_stop=None, src=None

@@ -3,12 +3,12 @@ import math
 import time
 import os
 import datetime
-import csv
 import pandas as pd
 
 from sim_agent import SimAgent, PingMessage, PongMessage, AgentAddress
 from mango import create_container
 from mango.messages.codecs import JSON
+from multiprocessing import Event
 
 from input_parser import read_parameters, get_topology
 
@@ -19,8 +19,21 @@ THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 RESULT_DIR = os.path.join(THIS_DIR, "../results")
 
 
+def aid_to_container_id(aid, config):
+    n_agents = config["number_of_agents"]
+    n_containers = config["number_of_containers"]
+    agents_per_container = math.ceil(n_agents / n_containers)
+
+    return aid // agents_per_container
+
+
 async def make_agents_and_containers(
-    adjacenccy_matrix, agent_lists, config, periodic_processes, instant_processes
+    adjacenccy_matrix,
+    agent_lists,
+    config,
+    periodic_processes,
+    instant_processes,
+    agent_processes,
 ):
     containers = []
     agents = []
@@ -36,37 +49,74 @@ async def make_agents_and_containers(
 
     for container_id, agent_list in enumerate(agent_lists):
         for aid in agent_list:
-            agent = SimAgent(
-                containers[container_id],
-                config["work_on_message_in_seconds"],
-                config["work_periodic_in_seconds"],
-                config["n_periodic_tasks"],
-                config["delay_periodic_in_seconds"],
-                config["message_amount"],
-                config["message_size_bytes"],
-                config["message_nesting_depths"],
-                f"{aid}",
-                periodic_processes,
-                instant_processes,
-            )
+            if agent_processes:
+                event = Event()
+                event.clear()
 
-            agents.append(agent)
+                def agent_creator_sub_process(c):
+                    agent = SimAgent(
+                        c,
+                        config["work_on_message_in_seconds"],
+                        config["work_periodic_in_seconds"],
+                        config["n_periodic_tasks"],
+                        config["delay_periodic_in_seconds"],
+                        config["message_amount"],
+                        config["message_size_bytes"],
+                        config["message_nesting_depths"],
+                        f"{aid}",
+                        periodic_processes,
+                        instant_processes,
+                        mp_event=event,
+                    )
+                    set_neighbors_to_agent(
+                        adjacenccy_matrix, config, containers, aid, agent
+                    )
 
-    # set neighborhoods
-    for aid, agent in enumerate(agents):
-        neighbors = []
-        n_ids = adjacenccy_matrix[aid]
-        for n_id, value in enumerate(n_ids):
-            if value == 1:
-                neighbors.append(agents[n_id])
+                p_handle = containers[container_id].as_agent_process(
+                    agent_creator=agent_creator_sub_process
+                )
+                agents.append((containers[container_id], p_handle.pid, event))
+                await p_handle
 
-        neighbor_addresses = [
-            AgentAddress(n.addr[0], n.addr[1], n.aid) for n in neighbors
-        ]
+            else:
+                agent = SimAgent(
+                    containers[container_id],
+                    config["work_on_message_in_seconds"],
+                    config["work_periodic_in_seconds"],
+                    config["n_periodic_tasks"],
+                    config["delay_periodic_in_seconds"],
+                    config["message_amount"],
+                    config["message_size_bytes"],
+                    config["message_nesting_depths"],
+                    f"{aid}",
+                    periodic_processes,
+                    instant_processes,
+                )
+                set_neighbors_to_agent(
+                    adjacenccy_matrix, config, containers, aid, agent
+                )
 
-        agent.set_neighbors(neighbor_addresses)
+                agents.append(agent)
 
     return (agents, containers)
+
+
+def set_neighbors_to_agent(adjacenccy_matrix, config, containers, aid, agent):
+    neighbors = []
+    n_ids = adjacenccy_matrix[aid]
+    for n_id, value in enumerate(n_ids):
+        if value == 1:
+            neighbors.append(n_id)
+
+    neighbor_addresses = [
+        AgentAddress(
+            containers[aid_to_container_id(n, config)].addr[0],
+            containers[aid_to_container_id(n, config)].addr[1],
+            f"{n}",
+        )
+        for n in neighbors
+    ]
+    agent.set_neighbors(neighbor_addresses)
 
 
 def container_to_agents(config):
@@ -88,16 +138,43 @@ def container_to_agents(config):
     return output
 
 
-async def run_simulation(config, periodic_processes, instant_processes):
+async def call_run_pid(container):
+    for _, agent in container._agents.items():
+        await agent.run_agent()
+        agent.mp_event.set()
+
+
+async def wait_for_processes_to_run(container_to_pid):
+    events = []
+    for container, pid, event in container_to_pid:
+        container.dispatch_to_agent_process(pid, call_run_pid)
+        events.append(event)
+    for event in events:
+        while not event.is_set():
+            await asyncio.sleep(0.05)
+
+
+async def run_simulation(
+    config, periodic_processes, instant_processes, agent_processes
+):
     adjacency_matrix = get_topology(config)
     agent_lists = container_to_agents(config)
     agents, containers = await make_agents_and_containers(
-        adjacency_matrix, agent_lists, config, periodic_processes, instant_processes
+        adjacency_matrix,
+        agent_lists,
+        config,
+        periodic_processes,
+        instant_processes,
+        agent_processes,
     )
 
     start_time = time.time()
 
-    await asyncio.gather(*[a.run_agent() for a in agents])
+    if agent_processes:
+        await wait_for_processes_to_run(agents)
+    else:
+        await asyncio.gather(*[a.run_agent() for a in agents])
+
     await asyncio.gather(*[c.shutdown() for c in containers])
 
     time_elapsed = time.time() - start_time
@@ -119,56 +196,72 @@ def save_sim_results(results, file_prefix):
     df.to_csv(output_file)
 
 
-async def main():
-    # await c.shutdown()
-    n_runs, configs = read_parameters()
-    results = {}
-
+def run_full_simulation(
+    n_runs,
+    configs,
+    periodic_processes=False,
+    instant_processes=False,
+    agent_processes=False,
+    name="python_single_process_",
+):
     # Vanilla python mango
     periodic_processes = instant_processes = False
+    results = {}
 
     for config in configs:
         result_times = [0] * n_runs
 
         for i in range(n_runs):
-            result_times[i] = await run_simulation(
-                config, periodic_processes, instant_processes
+            result_times[i] = asyncio.run(
+                run_simulation(
+                    config, periodic_processes, instant_processes, agent_processes
+                )
             )
 
         results[config["simulation_name"]] = result_times
 
-    save_sim_results(results, "python_single_process_")
+    save_sim_results(results, name)
 
-    # process periodics
-    periodic_processes = True
-    instant_processes = False
 
-    for config in configs:
-        result_times = [0] * n_runs
+def main():
+    n_runs, configs = read_parameters()
 
-        for i in range(n_runs):
-            result_times[i] = await run_simulation(
-                config, periodic_processes, instant_processes
-            )
+    run_full_simulation(
+        n_runs,
+        configs,
+        periodic_processes=False,
+        instant_processes=False,
+        agent_processes=True,
+        name="python_agent_processes_",
+    )
 
-        results[config["simulation_name"]] = result_times
+    run_full_simulation(
+        n_runs,
+        configs,
+        periodic_processes=False,
+        instant_processes=False,
+        agent_processes=False,
+        name="python_single_process_",
+    )
 
-    save_sim_results(results, "python_periodic_processes_")
+    run_full_simulation(
+        n_runs,
+        configs,
+        periodic_processes=True,
+        instant_processes=False,
+        agent_processes=False,
+        name="python_periodic_processes_",
+    )
 
-    # process both
-    periodic_processes = instant_processes = True
-
-    for config in configs:
-        result_times = [0] * n_runs
-        for i in range(n_runs):
-            result_times[i] = await run_simulation(
-                config, periodic_processes, instant_processes
-            )
-
-        results[config["simulation_name"]] = result_times
-
-    save_sim_results(results, "python_all_processes_")
+    run_full_simulation(
+        n_runs,
+        configs,
+        periodic_processes=True,
+        instant_processes=True,
+        agent_processes=False,
+        name="python_task_processes_",
+    )
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
