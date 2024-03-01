@@ -197,6 +197,7 @@ def save_sim_results(results, file_prefix):
 
 
 def run_full_simulation(
+    results,
     n_runs,
     configs,
     periodic_processes=False,
@@ -206,7 +207,7 @@ def run_full_simulation(
 ):
     # Vanilla python mango
     periodic_processes = instant_processes = False
-    results = {}
+    these_results = []
 
     for config in configs:
         result_times = [0] * n_runs
@@ -217,50 +218,63 @@ def run_full_simulation(
                     config, periodic_processes, instant_processes, agent_processes
                 )
             )
-
-        results[config["simulation_name"]] = result_times
-
-    save_sim_results(results, name)
+        for i, time in enumerate(result_times):
+            these_results.append(
+                {
+                    "scenario": config["simulation_name"],
+                    "version": name,
+                    "performance": time,
+                    "num": i,
+                }
+            )
+    results += these_results
 
 
 def main():
     n_runs, configs = read_parameters()
+    results = []
 
     run_full_simulation(
+        results,
         n_runs,
         configs,
         periodic_processes=False,
         instant_processes=False,
         agent_processes=True,
-        name="python_agent_processes_",
+        name="python_agent_processes",
     )
 
     run_full_simulation(
+        results,
         n_runs,
         configs,
         periodic_processes=False,
         instant_processes=False,
         agent_processes=False,
-        name="python_single_process_",
+        name="python_single_process",
     )
 
     run_full_simulation(
+        results,
         n_runs,
         configs,
         periodic_processes=True,
         instant_processes=False,
         agent_processes=False,
-        name="python_periodic_processes_",
+        name="python_periodic_processes",
     )
 
     run_full_simulation(
+        results,
         n_runs,
         configs,
         periodic_processes=True,
         instant_processes=True,
         agent_processes=False,
-        name="python_task_processes_",
+        name="python_task_processes",
     )
+
+    save_sim_results(results, "python_")
 
 
 if __name__ == "__main__":

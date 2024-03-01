@@ -5,6 +5,8 @@ using CSV
 using Dates
 using DataFrames
 using Profile
+using ProfileView
+using StatProfilerHTML
 
 # using FromFile
 # @from "input_parser.jl" using InputParser
@@ -159,11 +161,11 @@ function run_dummy()
     end
 
     @sync for a in agents
-        @async run_agent(a)
+        Threads.@spawn run_agent(a)
     end
 
     @sync for c in containers
-        @async shutdown(c)
+        Threads.@spawn shutdown(c)
     end
 end
 
@@ -200,7 +202,7 @@ function run_simulation(config::Dict{String,Any})::Float64
     return end_time - start_time
 end
 
-function save_sim_results(results::Dict{String,Vector{Float64}})::Nothing
+function save_sim_results(results::Vector{Dict{String,Any}}, prefix::String)::Nothing
     if !isdir(RESULT_DIR)
         mkdir(RESULT_DIR)
     end
@@ -210,7 +212,7 @@ function save_sim_results(results::Dict{String,Vector{Float64}})::Nothing
     # column values = result times
     timestamp = string(round(now(), Minute))
     filename = timestamp * "_" * string(Threads.nthreads()) * ".csv"
-    output_file = RESULT_DIR * "/" * filename
+    output_file = RESULT_DIR * "/" * prefix * filename
     df = DataFrame(results)
     CSV.write(output_file, df)
 
@@ -219,8 +221,12 @@ end
 
 
 function main()
+    version = "julia_"
+    if length(ARGS) == 1
+        version = ARGS[1]
+    end
     n_runs, configs = read_parameters()
-    results = Dict{String,Vector{Float64}}()
+    results = Vector{Dict{String,Any}}()
 
     # get compilation times out of the measurement
     @time run_dummy()
@@ -232,20 +238,23 @@ function main()
         for config in configs
             result_times = zeros(Float64, n_runs)
 
+            # @profilehtml result_times[1] = run_simulation(config)
             for i = 1:n_runs
                 result_times[i] = run_simulation(config)
                 println(result_times[i])
-                #@profile result_times[i] = run_simulation(config)
-                #Profile.print()
-                #Profile.clear()
-                #println("----------------------------------------")
             end
-
-            results[config["simulation_name"]] = result_times
+            for (i, time) in enumerate(result_times)
+                push!(results, Dict(
+                    "scenario" => config["simulation_name"],
+                    "version" => version,
+                    "performance" => time,
+                    "num" => i
+                ))
+            end
         end
     end
 
-    save_sim_results(results)
+    save_sim_results(results, version)
 end
 
 
