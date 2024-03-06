@@ -76,13 +76,7 @@ def create_multilevel_grouped_bar_chart(
         tickfont=dict(size=20),
         range=[
             0,
-            max(
-                [
-                    sum([y_array_list[i][j] for i in range(len(y_array_list))])
-                    for j in range(len(y_array_list[0]))
-                ]
-            )
-            + 0.5,
+            max(max(y_array_list)) + 0.5,
         ],
     )
 
@@ -104,6 +98,12 @@ def load_df(folder_name):
     for file in [f.path for f in os.scandir(csv_path) if f.is_file()]:
         dfs.append(pandas.read_csv(file))
     return pandas.concat(dfs)
+
+
+def other_version(version):
+    if version == "julia":
+        return "python"
+    return "julia"
 
 
 def bar(df):
@@ -135,8 +135,10 @@ def bar(df):
             )
             + np.array(
                 [
-                    j // sum([version in s for s in unique_version]) * (5)
-                    + i * (sum([version in s for s in unique_version]))
+                    j
+                    // sum([version in s for s in unique_version])
+                    * (sum([other_version(version) in s for s in unique_version]) + 1)
+                    + i * (sum([other_version(version) in s for s in unique_version]))
                     for j in range(
                         len(unique_scenario)
                         * sum([version in s for s in unique_version])
