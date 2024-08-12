@@ -15,6 +15,9 @@ Both frameworks are benchmarked on the same scenarios in which agents exchange m
 The parameters of a simulation run are:
 
 Simulation Parameters:
+* `n_runs` - number of evaluation runs per scenario (plot outputs are mean of these runs)
+
+Scenario Parameters:
 * `simulation_name`
 * `number_of_agents` - amount of agents that are created
 * `number_of_containers` - amount of containers the agents are distributed on

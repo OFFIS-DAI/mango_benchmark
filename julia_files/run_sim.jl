@@ -8,10 +8,6 @@ using Profile
 using ProfileView
 using StatProfilerHTML
 
-# using FromFile
-# @from "input_parser.jl" using InputParser
-# @from "sim_agent.jl" using SimulationAgent
-
 import Mango.handle_message
 include("sim_agent.jl")
 include("input_parser.jl")
@@ -230,8 +226,6 @@ function main()
 
     # get compilation times out of the measurement
     @time run_dummy()
-
-    println("post dummy, actual runs: ")
     println("-------------------------")
 
     begin
