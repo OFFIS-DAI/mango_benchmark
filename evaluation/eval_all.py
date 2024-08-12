@@ -152,7 +152,7 @@ def bar(df):
         [f"<b>{scenario}</b>" for scenario in pandas.unique(df_means["scenario"])],
         len(unique_version),
         list(unique_version) * len(unique_scenario),
-        yaxis_title="<b>performance in s</b>",
+        yaxis_title="<b>runtime in s</b>",
         multi_level_distance=-0.4,
     )
     bar_fig.write_html(file="bar_julia_python_benchmark.html")
