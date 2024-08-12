@@ -4,6 +4,7 @@ import pandas
 import plotly.graph_objects as go
 import os
 import numpy as np
+import sys
 
 
 def create_multilevel_grouped_bar_chart(
@@ -94,7 +95,7 @@ def create_multilevel_grouped_bar_chart(
 
 def load_df(folder_name):
     dfs = []
-    csv_path = Path("results/" + folder_name)
+    csv_path = Path(folder_name)
     for file in [f.path for f in os.scandir(csv_path) if f.is_file()]:
         dfs.append(pandas.read_csv(file))
     return pandas.concat(dfs)
@@ -164,4 +165,9 @@ def eval_all(folder_name):
 
 
 if __name__ == "__main__":
-    eval_all("set_one")
+    eval_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../results")
+
+    if len(sys.argv) > 1:
+        eval_dir = sys.argv[1]
+
+    eval_all(eval_dir)
