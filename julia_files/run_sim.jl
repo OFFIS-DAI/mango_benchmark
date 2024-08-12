@@ -8,11 +8,7 @@ using Profile
 using ProfileView
 using StatProfilerHTML
 
-# using FromFile
-# @from "input_parser.jl" using InputParser
-# @from "sim_agent.jl" using SimulationAgent
-
-import Mango.AgentCore.handle_message
+import Mango.handle_message
 include("sim_agent.jl")
 include("input_parser.jl")
 using .SimulationAgent
@@ -81,7 +77,7 @@ function make_agents_and_containers(
         end
 
         neighbor_addresses =
-            [AgentAddress(n.context.container.protocol.address, n.aid) for n in neighbors]
+            [AgentAddress(n.aid, n.context.container.protocol.address, nothing) for n in neighbors]
         agent.neighbors = neighbor_addresses
     end
 
@@ -147,10 +143,10 @@ function run_dummy()
     )
     register(c2, a2)
 
-    a2_address = AgentAddress(c2.protocol.address, a2.aid)
+    a2_address = AgentAddress(a2.aid, c2.protocol.address, nothing)
     a1.neighbors = [a2_address]
 
-    a1_address = AgentAddress(c1.protocol.address, a1.aid)
+    a1_address = AgentAddress(a1.aid, c1.protocol.address, nothing)
     a2.neighbors = [a1_address, a2_address]
 
     containers = [c1, c2]
@@ -230,8 +226,6 @@ function main()
 
     # get compilation times out of the measurement
     @time run_dummy()
-
-    println("post dummy, actual runs: ")
     println("-------------------------")
 
     begin

@@ -1,6 +1,6 @@
 module SimulationAgent
 using Mango
-import Mango.AgentCore.handle_message
+import Mango.handle_message
 using Sockets: InetAddr
 using OrderedCollections
 
@@ -10,23 +10,6 @@ PING_TYPE = "ping"
 PONG_TYPE = "pong"
 PING_CHAR = 'a'
 PONG_CHAR = 'b'
-
-struct AgentAddress
-    addr::InetAddr
-    aid::String
-
-    function AgentAddress(msg_addr::InetAddr, msg_aid::String)
-        return new(msg_addr, msg_aid)
-    end
-
-    function AgentAddress(msg_addr::String, msg_aid::String)
-        host, port_string = split(msg_addr, ":")
-        port = parse(UInt16, port_string)
-
-        return new(InetAddr(host, port), msg_aid)
-    end
-end
-
 
 @agent struct SimAgent
     work_on_message_in_seconds::Float64
@@ -58,7 +41,7 @@ function send_ping(agent::SimAgent, target::AgentAddress)
         end
     end
 
-    send_message(agent, msg_dict, target.aid, target.addr, type=PING_TYPE)
+    send_message(agent, msg_dict, target; type=PING_TYPE)
 end
 
 function send_pong(agent::SimAgent, target::AgentAddress)
@@ -76,7 +59,7 @@ function send_pong(agent::SimAgent, target::AgentAddress)
         end
     end
 
-    send_message(agent, msg_dict, target.aid, target.addr, type=PONG_TYPE)
+    send_message(agent, msg_dict, target; type=PONG_TYPE)
 end
 
 # Override the default handle_message function for ping pong agents
@@ -91,7 +74,7 @@ function handle_message(agent::SimAgent, content::Any, meta::AbstractDict)
     # We don't do anything with that.
     # println("got a message with: ", content, "  ", meta)
     agent.incoming_msg_count += 1
-    sender = AgentAddress(meta["sender_addr"], meta["sender_id"])
+    sender = AgentAddress(meta["sender_id"], meta["sender_addr"], nothing)
 
     # simulate work caused by the message
     schedule_one_off_task(agent)
